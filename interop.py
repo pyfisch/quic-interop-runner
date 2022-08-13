@@ -284,7 +284,7 @@ class InteropRunner:
         json.dump(out, f)
         f.close()
 
-    def _copy_logs(self, container: str, dir: tempfile.TemporaryDirectory):
+    def _copy_logs(self, container: str, dir: tempfile.TemporaryDirectory, testcase):
         r = subprocess.run(
             'docker cp "$(docker-compose --log-level ERROR ps -q '
             + container
@@ -293,6 +293,11 @@ class InteropRunner:
             shell=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            env={
+                'WWW': testcase.www_dir(),
+                'CERTS': testcase.certs_dir(),
+                'DOWNLOADS': testcase.download_dir(),
+            },
         )
         if r.returncode != 0:
             logging.info(
@@ -393,9 +398,9 @@ class InteropRunner:
             logging.debug("%s", r.stdout.decode("utf-8"))
 
         # copy the pcaps from the simulator
-        self._copy_logs("sim", sim_log_dir)
-        self._copy_logs("client", client_log_dir)
-        self._copy_logs("server", server_log_dir)
+        self._copy_logs("sim", sim_log_dir, testcase)
+        self._copy_logs("client", client_log_dir, testcase)
+        self._copy_logs("server", server_log_dir, testcase)
 
         if not expired:
             lines = output.splitlines()
